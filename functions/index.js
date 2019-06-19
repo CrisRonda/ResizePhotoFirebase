@@ -1,6 +1,9 @@
 const functions = require('firebase-functions');
-// const admin = require('firebase-admin');
-// const gcs = require('@google-cloud/storage')();
+const { Storage } = require('@google-cloud/storage');
+const projectId = 'restaurantrn-d53d2'
+let gcs = new Storage({ projectId })
+const os = require('os')
+const path = require('path')
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
 //
@@ -9,5 +12,21 @@ const functions = require('firebase-functions');
 // });
 exports.onFileChange = functions.storage.object().onFinalize(event => {
     console.log(event)
-    return 0;
+    const bucket = event.bucket;
+    const contentType = event.contentType;
+    const filePath = event.name;
+    console.log("Se subio la imagen, procesando ....")
+    if (path.basename(filePath).startsWith('renombrado_')) {
+        console.log('Ya se renombro la imagen')
+        return;
+    }
+    const destBucket = gcs.bucket(bucket);
+    const tmpFilePath = path.join(os.tmpdir(), path.basename(filePath))
+    const metadata = { contentType }
+    return destBucket.file(filePath).download({ destination: tmpFilePath }).then(() => {
+        return destBucket.upload(tmpFilePath, {
+            destination: 'renombrado_' + path.basename(filePath),
+            metadata
+        })
+    })
 })
