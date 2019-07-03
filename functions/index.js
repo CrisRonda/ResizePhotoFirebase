@@ -7,13 +7,11 @@ const os = require("os");
 const path = require("path");
 const spawn = require("child-process-promise").spawn;
 exports.onFileChange = functions.storage.object().onFinalize(event => {
-  console.log(event);
   const bucket = event.bucket;
   const contentType = event.contentType;
   const filePath = event.name;
   const pathImage = path.basename(filePath);
   console.log("Se subio la imagen, procesando ....");
-
   if (pathImage.startsWith("resized_")) {
     console.log("Ya se renombro la imagen");
     return;
@@ -43,20 +41,13 @@ exports.onUpdateLikes = functions.database
   .ref("/data/{id}/usersLikes")
   .onUpdate(async change => {
     const { before, after } = change;
-    console.log("Hola desde el update!!");
-    console.log("ANTES", before.val());
-    console.log("DESPUES", after.val());
     const refLikes = after.ref.parent.child("likes");
-    console.log(refLikes);
     refLikes.transaction(count => {
-      console.log(count);
       return count + 1;
     });
   });
 
 exports.myOwnFunction = functions.https.onRequest((req, res) => {
-  console.log(req);
-  console.log(res);
   if (req.method === "POST") {
     return res.status(500).json({
       message: "NO PERMITIDO"
